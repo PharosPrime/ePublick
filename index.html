@@ -2193,17 +2193,34 @@
 
     function readerThemeRules() {
       const s = state.settings;
+      const safeMargin = getSafeReaderMargin(s.margin);
       return {
+        "*": {
+          "box-sizing": "border-box !important"
+        },
+        "html": {
+          "width": "100% !important",
+          "max-width": "100% !important",
+          "overflow-x": "hidden !important",
+          "transform": "none !important"
+        },
         body: {
+          "width": "100% !important",
+          "max-width": "100% !important",
+          "margin": "0 auto !important",
+          "padding": `0 ${safeMargin}px !important`,
+          "box-sizing": "border-box !important",
           "font-family": `${s.fontFamily} !important`,
           "font-size": `${s.fontSize}px !important`,
+          "font-style": "normal !important",
           "line-height": `${s.lineHeight} !important`,
           "color": `${cssVar("--ink")} !important`,
           "background": `${cssVar("--page")} !important`,
-          "padding": `0 ${s.margin}px !important`,
           "text-align": `${s.justify ? "justify" : "left"} !important`,
           "hyphens": `${s.hyphenate ? "auto" : "none"} !important`,
-          "overflow-wrap": "break-word !important"
+          "overflow-wrap": "break-word !important",
+          "overflow-x": "hidden !important",
+          "transform": "none !important"
         },
         p: {
           "margin-top": "0 !important",
@@ -2260,7 +2277,7 @@
       const soft = cssVar("--accent-soft");
       const align = s.justify ? "justify" : "left";
       const hyphens = s.hyphenate ? "auto" : "none";
-      const margin = Math.max(16, Number(s.margin) || defaults.margin);
+      const margin = getSafeReaderMargin(s.margin);
       const fontSize = Math.max(12, Number(s.fontSize) || defaults.fontSize);
       const lineHeight = Number(s.lineHeight) || defaults.lineHeight;
       const fontFamily = s.fontFamily || defaults.fontFamily;
@@ -2286,27 +2303,45 @@
         html, body {
           background: ${page} !important;
           color: ${ink} !important;
-          margin: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          margin: 0 auto !important;
           padding: 0 ${margin}px !important;
+          box-sizing: border-box !important;
           font-family: ${fontFamily} !important;
           font-size: ${fontSize}px !important;
+          font-style: normal !important;
           line-height: ${lineHeight} !important;
           text-align: ${align} !important;
           hyphens: ${hyphens} !important;
           -webkit-hyphens: ${hyphens} !important;
           overflow-wrap: break-word !important;
+          overflow-x: hidden !important;
+          transform: none !important;
+          writing-mode: horizontal-tb !important;
+          direction: ltr !important;
           text-rendering: optimizeLegibility !important;
           -webkit-font-smoothing: antialiased !important;
         }
+        *, *::before, *::after {
+          box-sizing: border-box !important;
+          max-width: 100% !important;
+        }
         body, body *:not(svg):not(path) {
           font-family: ${fontFamily} !important;
+          transform: none !important;
         }
         p, li, blockquote, dd, dt, div {
           font-size: inherit !important;
+          font-style: normal !important;
           line-height: ${lineHeight} !important;
           text-align: ${align} !important;
           hyphens: ${hyphens} !important;
           -webkit-hyphens: ${hyphens} !important;
+          max-width: 100% !important;
+          overflow-wrap: break-word !important;
+          transform: none !important;
         }
         h1, h2, h3, h4, h5, h6 {
           font-family: ${fontFamily} !important;
@@ -2342,6 +2377,14 @@
 
     function cssVar(name) {
       return getComputedStyle(document.body).getPropertyValue(name).trim();
+    }
+
+    function getSafeReaderMargin(rawMargin) {
+      const desired = Math.max(12, Number(rawMargin) || defaults.margin);
+      const width = window.visualViewport?.width || window.innerWidth || 390;
+      if (width <= 430) return Math.min(desired, Math.max(14, Math.floor(width * 0.055)));
+      if (width <= 720) return Math.min(desired, Math.max(18, Math.floor(width * 0.07)));
+      return desired;
     }
 
     function setMobileViewportHeight() {
